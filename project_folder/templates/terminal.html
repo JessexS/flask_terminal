@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Python Terminal</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #terminal {
+            width: 80%;
+            height: 70vh;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: #000;
+            color: #fff;
+            border: 1px solid #333;
+            overflow-y: auto;
+        }
+        
+        #input-line {
+            display: flex;
+            width: 80%;
+            margin: 0 auto;
+        }
+        
+        #prompt {
+            color: #0f0;
+            margin-right: 5px;
+        }
+        
+        #command {
+            background-color: #000;
+            color: #fff;
+            border: none;
+            flex-grow: 1;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .error {
+            color: #f55;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal"></div>
+    <div id="input-line">
+        <span id="prompt">>>> </span>
+        <input type="text" id="command" autocomplete="off" placeholder="Enter Python file name (.py)">
+    </div>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const commandInput = document.getElementById('command');
+        
+        function addOutput(text, isError = false) {
+            const outputElement = document.createElement('div');
+            outputElement.textContent = text;
+            if (isError) outputElement.className = 'error';
+            terminal.appendChild(outputElement);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+        
+        commandInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                const command = commandInput.value;
+                
+                addOutput(`>>> ${command}`);
+                commandInput.value = '';
+                
+                fetch('/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({script: command})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.output) addOutput(data.output);
+                    if (data.error) addOutput(data.error, true);
+                })
+                .catch(error => {
+                    addOutput(`Failed to execute: ${error}`, true);
+                });
+            }
+        });
+        
+        // Focus on command input when page loads
+        window.onload = function() {
+            commandInput.focus();
+            addOutput("Python Terminal Interface - Enter a .py file path to execute");
+        };
+    </script>
+</body>
+</html>
